@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Поймай квадрат</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1e1e2f, #2a2a4a);
+      font-family: 'Segoe UI', Arial, sans-serif;
+      color: #fff;
+    }
+
+
+    h1 {
+      margin-bottom: 15px;
+      font-size: 24px;
+      letter-spacing: 1px;
+      color: #ffd93d;
+      text-shadow: 0 0 10px rgba(255, 217, 61, 0.5);
+    }
+
+
+    #game {
+      position: relative;
+      width: 500px;
+      height: 500px;
+      background: #12121c;
+      border: 3px solid #ffd93d;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 0 30px rgba(255, 217, 61, 0.3);
+      cursor: crosshair;
+    }
+
+
+    #square {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      background: radial-gradient(circle at 30% 30%, #ff6b6b, #c92a2a);
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(255, 107, 107, 0.8);
+      transition: transform 0.1s;
+    }
+
+
+    #square:hover {
+      transform: scale(1.05);
+    }
+
+
+    #ui {
+      display: flex;
+      justify-content: space-between;
+      width: 500px;
+      margin-top: 15px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+
+    #ui span {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 217, 61, 0.4);
+    }
+
+
+    #score {
+      color: #6bff6b;
+    }
+
+
+    #timer {
+      color: #6bc9ff;
+    }
+
+
+    #overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 10;
+    }
+
+
+    #overlay.hidden {
+      display: none;
+    }
+
+
+    #overlay h2 {
+      font-size: 32px;
+      margin-bottom: 15px;
+      color: #ffd93d;
+    }
+
+
+    #overlay p {
+      font-size: 18px;
+      margin-bottom: 20px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+
+    #overlay button {
+      padding: 12px 35px;
+      font-size: 18px;
+      font-weight: bold;
+      background: #ffd93d;
+      color: #1e1e2f;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+
+    #overlay button:hover {
+      background: #ffc107;
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(255, 217, 61, 0.7);
+    }
+  </style>
+</head>
+<body>
+  <h1>🎯 Поймай квадрат</h1>
+
+
+  <div id="game">
+    <div id="square"></div>
+    <div id="overlay">
+      <h2>Готов играть?</h2>
+      <p>Кликай по красному квадрату как можно быстрее!<br>У тебя есть <b>30 секунд</b>.</p>
+      <button id="startBtn">Начать игру</button>
+    </div>
+  </div>
+
+
+  <div id="ui">
+    <span>Счёт: <span id="score">0</span></span>
+    <span>Время: <span id="timer">30</span> сек</span>
+  </div>
+
+
+  <script>
+    const gameEl = document.getElementById('game');
+    const squareEl = document.getElementById('square');
+    const scoreEl = document.getElementById('score');
+    const timerEl = document.getElementById('timer');
+    const overlayEl = document.getElementById('overlay');
+    const startBtn = document.getElementById('startBtn');
+
+
+    const GAME_DURATION = 30; // секунд
+    const SIZE = 60;
+
+
+    let score = 0;
+    let timeLeft = GAME_DURATION;
+    let gameActive = false;
+    let gameTimer = null;
+
+
+    // Переместить квадрат в случайную позицию внутри поля
+    function moveSquare() {
+      const maxX = gameEl.clientWidth - SIZE;
+      const maxY = gameEl.clientHeight - SIZE;
+      const x = Math.random() * maxX;
+      const y = Math.random() * maxY;
+
+
+      squareEl.style.left = x + 'px';
+      squareEl.style.top = y + 'px';
+    }
+
+
+    // Клик по квадрату
+    squareEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!gameActive) return;
+
+
+      score++;
+      scoreEl.textContent = score;
+      moveSquare();
+    });
+
+
+    // Клик мимо квадрата (по полю)
+    gameEl.addEventListener('click', () => {
+      if (!gameActive) return;
+
+
+      score = Math.max(0, score - 1);
+      scoreEl.textContent = score;
+    });
+
+
+    // Запуск игры
+    function startGame() {
+      score = 0;
+      timeLeft = GAME_DURATION;
+      scoreEl.textContent = '0';
+      timerEl.textContent = timeLeft;
+      gameActive = true;
+
+
+      overlayEl.classList.add('hidden');
+      moveSquare();
+
+
+      gameTimer = setInterval(() => {
+        timeLeft--;
+        timerEl.textContent = timeLeft;
+
+
+        if (timeLeft <= 0) {
+          endGame();
+        }
+      }, 1000);
+    }
+
+
+    // Конец игры
+    function endGame() {
+      gameActive = false;
+      clearInterval(gameTimer);
+
+
+      overlayEl.classList.remove('hidden');
+      overlayEl.innerHTML = `
+        <h2>⏰ Время вышло!</h2>
+        <p>Твой результат: <b style="color:#6bff6b">${score}</b> очков</p>
+        <button id="restartBtn">Играть снова</button>
+      `;
+
+
+      document.getElementById('restartBtn').addEventListener('click', startGame);
+    }
+
+
+    startBtn.addEventListener('click', startGame);
+  </script>
+</body>
+</html>
